@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+# 添加多进程堆栈的工具：runit，cron syslog-ng-core和logrotate
+# 构建镜像过程中执行，一般是在install.sh脚本之前运行，但也可能会在install.sh脚本之后执行，但从源码来看，应该需要在install.sh脚本之前运行
+# 所以需要在dockerfile文件中添加 run /container/tool/add-multiple-process-stack
+echo "Install the multiple process stack: runit, syslog-ng-core, logrotate and cron"
+# 安装多进程堆栈的工具
+/container/tool/add-service-available _runit _syslog-ng-core _logrotate _cron
+# 设置多进程堆栈工具已经安装的标志
+touch /container/multiple_process_stack_added

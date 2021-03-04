@@ -1,0 +1,34 @@
+#!/bin/sh -e
+
+# Usage :
+# RUN /container/tool/add-service-available [service1] [service2] ...
+
+# 一种将服务可用目录中的服务下载并添加到常规服务目录中的工具
+
+SERVICE_DIR="/container/service"
+SERVICE_AVAILABLE_DIR="/container/service-available"
+DOWNLOAD_FILENAME="download.sh"
+
+# $@表示所有参数
+for i in "$@"
+do
+
+    # 执行下载脚本，然后移动到服务目录
+    echo "add-service-available: ${i}"
+    if  [ -d "${SERVICE_AVAILABLE_DIR}/${i}" ]; then
+
+        if [ -f "${SERVICE_AVAILABLE_DIR}/${i}/${DOWNLOAD_FILENAME}" ]; then
+            echo "run ${SERVICE_AVAILABLE_DIR}/${i}/${DOWNLOAD_FILENAME}"
+            ${SERVICE_AVAILABLE_DIR}/"${i}"/"${DOWNLOAD_FILENAME}"
+            echo "remove ${SERVICE_AVAILABLE_DIR}/${i}/${DOWNLOAD_FILENAME}"
+            rm -f "${SERVICE_AVAILABLE_DIR}/${i}/${DOWNLOAD_FILENAME}"
+        fi
+
+        echo "move ${SERVICE_AVAILABLE_DIR}/${i} to ${SERVICE_DIR}/${i}"
+        mv "${SERVICE_AVAILABLE_DIR}/${i}" "${SERVICE_DIR}/${i}"
+
+    else
+        echo "service-available: ${i} not found in ${SERVICE_AVAILABLE_DIR}/${i}"
+        exit 1
+    fi
+done

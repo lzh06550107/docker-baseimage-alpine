@@ -1,0 +1,49 @@
+#!/usr/bin/python3 -u
+import os, os.path, subprocess
+
+# 执行/container/service/install.sh和/container/service/*/install.sh脚本的工具
+# 该脚本在镜像构建过程中被调用
+SERVICE_DIR = "/container/service"
+INSTALL_FILENAME = "install.sh"
+PROCESS_FILENAME = "process.sh"
+nb_process = 0
+
+print("install-service")
+# Auto run global install script if available，执行全局install.sh
+if os.path.isfile(SERVICE_DIR + os.sep + INSTALL_FILENAME):
+    print(("run " + SERVICE_DIR + os.sep + INSTALL_FILENAME))
+    # 会开启一个子进程去执行，并且等待子进程结束才继续执行其他的
+    subprocess.call([SERVICE_DIR + os.sep + INSTALL_FILENAME],shell=True)
+
+    print(("remove " + SERVICE_DIR + os.sep + INSTALL_FILENAME + "\n"))
+    # 执行完成后删除该脚本
+    os.remove(SERVICE_DIR + os.sep + INSTALL_FILENAME)
+
+# Process install script of services in /container/service，执行各个服务中的install.sh
+for service in sorted(os.listdir(SERVICE_DIR)):
+
+    if os.path.isfile(SERVICE_DIR + os.sep + service + os.sep + INSTALL_FILENAME):
+        print(("run " + SERVICE_DIR + os.sep + service + os.sep + INSTALL_FILENAME))
+        subprocess.call([SERVICE_DIR + os.sep + service + os.sep + INSTALL_FILENAME],shell=True)
+
+        print(("remove " + SERVICE_DIR + os.sep + service + os.sep + INSTALL_FILENAME))
+        os.remove(SERVICE_DIR + os.sep + service + os.sep + INSTALL_FILENAME)
+
+    if os.path.isfile(SERVICE_DIR + os.sep + service + os.sep + PROCESS_FILENAME):
+    	# 统计process.sh脚本个数
+        nb_process += 1
+
+
+print((str(nb_process) + " process found."))
+
+# Multiple process image，如果process.sh脚本个数多于一个，则表示是多进程镜像
+if nb_process > 1:
+	# 通过文件是否存在来判断是否执行了add-multiple-process-stack脚本
+    if not os.path.exists("/container/multiple_process_stack_added"):
+        print("This image has multiple process.")
+        # TODO 存在问题，不应该是apk update
+        # 如果没有执行add-multiple-process-stack脚本，这里会补充执行
+        subprocess.call(["apt-get update"],shell=True)
+        subprocess.call(["/container/tool/add-multiple-process-stack"],shell=True)
+        print("For better image build process consider adding:")
+        print("\"/container/tool/add-multiple-process-stack\" after an apt-get update in your Dockerfile.")
